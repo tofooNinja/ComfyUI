@@ -52,6 +52,7 @@ from app.assets.services.asset_management import resolve_hash_to_path
 
 from app.user_manager import UserManager
 from app.model_manager import ModelFileManager
+from app.model_download import ModelDownloadManager
 from app.custom_node_manager import CustomNodeManager
 from app.subgraph_manager import SubgraphManager
 from app.node_replace_manager import NodeReplaceManager
@@ -218,6 +219,7 @@ class PromptServer():
 
         self.user_manager = UserManager()
         self.model_file_manager = ModelFileManager()
+        self.model_download_manager = ModelDownloadManager()
         self.custom_node_manager = CustomNodeManager()
         self.subgraph_manager = SubgraphManager()
         self.node_replace_manager = NodeReplaceManager()
@@ -1220,6 +1222,7 @@ class PromptServer():
     def add_routes(self):
         self.user_manager.add_routes(self.routes)
         self.model_file_manager.add_routes(self.routes)
+        self.model_download_manager.add_routes(self.routes)
         self.custom_node_manager.add_routes(self.routes, self.app, nodes.LOADED_MODULE_DIRS.items())
         self.subgraph_manager.add_routes(self.routes, nodes.LOADED_MODULE_DIRS.items())
         self.node_replace_manager.add_routes(self.routes)
