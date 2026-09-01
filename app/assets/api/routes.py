@@ -820,9 +820,17 @@ async def update_asset_route(request: web.Request) -> web.Response:
 async def delete_asset_route(request: web.Request) -> web.Response:
     reference_id = str(uuid.UUID(request.match_info["id"]))
 
+    # Fork extension: `?delete_content=true` also removes the content row and
+    # its on-disk file once no other record uses them. Default stays upstream's
+    # behavior (record deleted, content kept unless it is a Core preview).
+    delete_content = (
+        request.rel_url.query.get("delete_content", "").lower() == "true"
+    )
+
     try:
         deleted = delete_asset_reference(
             reference_id=reference_id,
+            delete_content=delete_content,
         )
     except Exception:
         logging.exception(

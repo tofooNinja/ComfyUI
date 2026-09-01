@@ -198,7 +198,15 @@ def reclaim_preview(session, preview_id: str) -> None:
 
 def delete_asset_reference(
     reference_id: str,
+    delete_content: bool = False,
 ) -> bool:
+    """Delete an asset record.
+
+    Fork extension: ``delete_content=True`` (the route's ``?delete_content=true``)
+    also drops the content row and its on-disk file once no other record uses
+    them, so the Generated tab can really delete outputs. Upstream only does
+    this for Core previews.
+    """
     # A write session: a registration linking the same preview file can't interleave.
     with create_write_session() as session:
         record = get_record_by_id(session, reference_id)
@@ -207,7 +215,7 @@ def delete_asset_reference(
         content_id, preview_id = record.content_id, record.preview_id
         is_core_preview = _is_core_preview(session, record)
         delete_record(session, reference_id)
-        if is_core_preview:
+        if is_core_preview or delete_content:
             _drop_unused_content(session, content_id)
         if preview_id:
             reclaim_preview(session, preview_id)

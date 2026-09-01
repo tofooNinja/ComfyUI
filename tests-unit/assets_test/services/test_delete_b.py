@@ -113,3 +113,35 @@ def test_delete_order_record_before_content(mock_create_session, session):
 
     assert session.get(Asset, record.id) is None
     assert session.get(AssetContent, content_id) is not None
+
+
+# Fork: delete_content=True (route `?delete_content=true`) reclaims content + file.
+def test_delete_content_removes_orphaned_content_and_file(mock_create_session, session, temp_dir):
+    content = create_content(session, path=str(temp_dir / "out.png"), size_bytes=4)
+    record = create_record(session, content_id=content.id, name="out.png")
+    temp_dir.joinpath("out.png").write_bytes(b"data")
+    session.commit()
+    record_id, content_id, path = record.id, content.id, content.path
+
+    assert delete_asset_reference(record_id, delete_content=True) is True
+
+    session.expire_all()
+    assert get_record_by_id(session, record_id) is None
+    assert session.get(AssetContent, content_id) is None
+    assert not os.path.exists(path)
+
+
+def test_delete_content_keeps_content_shared_with_other_record(mock_create_session, session, temp_dir):
+    content = create_content(session, path=str(temp_dir / "shared.png"), size_bytes=4)
+    r1 = create_record(session, content_id=content.id, name="a")
+    r2 = create_record(session, content_id=content.id, name="b")
+    temp_dir.joinpath("shared.png").write_bytes(b"data")
+    session.commit()
+    r1_id, r2_id, content_id, path = r1.id, r2.id, content.id, content.path
+
+    assert delete_asset_reference(r1_id, delete_content=True) is True
+
+    session.expire_all()
+    assert get_record_by_id(session, r2_id) is not None
+    assert session.get(AssetContent, content_id) is not None
+    assert os.path.isfile(path)
