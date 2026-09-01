@@ -658,13 +658,19 @@ async def update_asset_route(request: web.Request) -> web.Response:
 async def delete_asset_route(request: web.Request) -> web.Response:
     reference_id = str(uuid.UUID(request.match_info["id"]))
 
+    # Fork extension: `?delete_content=true` makes this a hard delete — once
+    # the reference is gone and the asset is orphaned, the on-disk file(s) are
+    # removed too. Default stays upstream's soft delete (reference hidden,
+    # content preserved; it may be shared with other references).
+    delete_content = (
+        request.rel_url.query.get("delete_content", "").lower() == "true"
+    )
+
     try:
-        # Deleting an asset is a soft delete of the reference; the underlying
-        # content is preserved (it may be shared with other references).
         deleted = delete_asset_reference(
             reference_id=reference_id,
             owner_id=USER_MANAGER.get_request_user_id(request),
-            delete_content_if_orphan=False,
+            delete_content_if_orphan=delete_content,
         )
     except Exception:
         logging.exception(

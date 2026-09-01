@@ -167,9 +167,9 @@ def delete_asset_reference(
     hidden and the underlying content is preserved. With ``True``, the content
     is also removed once it becomes orphaned.
 
-    Note: the public DELETE /api/assets/{id} endpoint always soft-deletes
-    (passes ``False``); the orphan-reclamation path is intentionally
-    internal-only, retained for a future GC/admin caller.
+    Note: the public DELETE /api/assets/{id} endpoint soft-deletes by default
+    (passes ``False``); our fork exposes the orphan-reclamation path via the
+    ``?delete_content=true`` query param so the UI can really delete files.
     """
     with create_session() as session:
         if not delete_content_if_orphan:
